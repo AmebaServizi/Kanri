@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ameba Ticket — Gestionale</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green: #1D9E75;
+  --green-dark: #0F6E56;
+  --green-light: #E1F5EE;
+  --amber: #EF9F27;
+  --amber-light: #FAEEDA;
+  --red: #E24B4A;
+  --red-light: #FCEBEB;
+  --blue: #378ADD;
+  --blue-light: #E6F1FB;
+  --gray-50: #F7F7F5;
+  --gray-100: #EEEDE8;
+  --gray-200: #D3D1C7;
+  --gray-400: #9B9990;
+  --gray-600: #5F5E5A;
+  --gray-800: #2C2C2A;
+  --white: #FFFFFF;
+  --font: 'DM Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { font-family: var(--font); background: var(--gray-50); color: var(--gray-800); font-size: 14px; }
+
+/* TOPBAR */
+.topbar {
+  background: var(--white); border-bottom: 1px solid var(--gray-100);
+  padding: 0 24px; height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow);
+}
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo-mark {
+  width: 32px; height: 32px; background: var(--green);
+  border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  color: white; font-weight: 700; font-size: 15px; font-family: var(--mono);
+}
+.logo-text { font-size: 15px; font-weight: 600; }
+.logo-text span { color: var(--green); }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+.sync-pill {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--gray-400);
+  background: var(--gray-50); border: 1px solid var(--gray-100);
+  padding: 5px 10px; border-radius: 20px; cursor: pointer;
+  transition: all 0.15s;
+}
+.sync-pill:hover { border-color: var(--gray-200); }
+.sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+.sync-dot.loading { background: var(--amber); animation: pulse 0.8s infinite; }
+.sync-dot.error { background: var(--red); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.25} }
+.btn-nuovo {
+  background: var(--green); color: white; border: none;
+  padding: 8px 16px; border-radius: var(--radius);
+  font-family: var(--font); font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: background 0.15s;
+  display: flex; align-items: center; gap: 6px;
+}
+.btn-nuovo:hover { background: var(--green-dark); }
+
+/* METRICS */
+.metrics-bar {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 12px; padding: 16px 24px;
+  background: var(--white); border-bottom: 1px solid var(--gray-100);
+}
+.metric { background: var(--gray-50); border-radius: var(--radius); padding: 12px 16px; }
+.metric-label { font-size: 11px; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.metric-value { font-size: 26px; font-weight: 600; font-family: var(--mono); line-height: 1; }
+.metric-value.amber { color: var(--amber); }
+.metric-value.red { color: var(--red); }
+.metric-value.green { color: var(--green); }
+.metric-value.blue { color: var(--blue); }
+
+/* TOOLBAR */
+.toolbar {
+  display: flex; gap: 10px; align-items: center;
+  padding: 14px 24px; flex-wrap: wrap;
+}
+.search-wrap { position: relative; flex: 1; min-width: 200px; }
+.search-wrap input {
+  width: 100%; font-family: var(--font); font-size: 13px;
+  padding: 8px 12px 8px 34px;
+  border: 1px solid var(--gray-200); border-radius: var(--radius);
+  background: var(--white); color: var(--gray-800); outline: none;
+  transition: border-color 0.15s;
+}
+.search-wrap input:focus { border-color: var(--green); }
+.search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--gray-400); font-size: 14px; pointer-events: none; }
+.tab-group { display: flex; gap: 3px; background: var(--gray-100); padding: 3px; border-radius: var(--radius); }
+.tab {
+  font-family: var(--font); font-size: 12px; font-weight: 500;
+  padding: 5px 12px; border-radius: 6px; border: none;
+  background: transparent; color: var(--gray-600); cursor: pointer; transition: all 0.15s;
+}
+.tab.active { background: var(--white); color: var(--gray-800); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.toolbar select {
+  font-family: var(--font); font-size: 13px; padding: 8px 12px;
+  border: 1px solid var(--gray-200); border-radius: var(--radius);
+  background: var(--white); color: var(--gray-800); outline: none; cursor: pointer;
+}
+
+/* TABLE */
+.table-wrap {
+  margin: 0 24px 24px; background: var(--white);
+  border-radius: var(--radius-lg); border: 1px solid var(--gray-100);
+  overflow: hidden; box-shadow: var(--shadow);
+}
+table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+thead { background: var(--gray-50); }
+th {
+  font-size: 11px; font-weight: 500; color: var(--gray-400);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 10px 14px; text-align: left;
+  border-bottom: 1px solid var(--gray-100); white-space: nowrap;
+}
+td {
+  padding: 11px 14px; border-bottom: 1px solid var(--gray-50);
+  font-size: 13px; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; vertical-align: middle;
+}
+tr:last-child td { border-bottom: none; }
+tbody tr { transition: background 0.1s; }
+tbody tr:hover td { background: var(--gray-50); cursor: pointer; }
+.ticket-id { font-family: var(--mono); font-size: 11px; color: var(--gray-400); }
+.ubicazione-cell { font-weight: 500; }
+.indirizzo-cell { color: var(--gray-400); font-size: 12px; }
+
+/* BADGES */
+.badge {
+  display: inline-flex; align-items: center;
+  font-size: 11px; font-weight: 500;
+  padding: 3px 8px; border-radius: 20px; white-space: nowrap;
+}
+.b-aperto { background: var(--amber-light); color: #854F0B; }
+.b-lav { background: var(--blue-light); color: #185FA5; }
+.b-chiuso { background: var(--green-light); color: var(--green-dark); }
+.b-scaduto { background: var(--red-light); color: #A32D2D; }
+.b-gray { background: var(--gray-100); color: var(--gray-600); border: 1px solid var(--gray-200); }
+.b-app { background: var(--gray-50); color: var(--gray-600); border: 1px solid var(--gray-200); font-size: 11px; font-family: var(--mono); }
+
+/* SLA BAR */
+.sla-wrap { display: flex; align-items: center; gap: 6px; }
+.sla-track { flex: 1; height: 4px; background: var(--gray-100); border-radius: 4px; overflow: hidden; min-width: 36px; }
+.sla-fill { height: 100%; border-radius: 4px; }
+.sla-lbl { font-size: 11px; font-family: var(--mono); min-width: 38px; text-align: right; }
+
+/* DETAIL PANEL */
+.overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.35); z-index: 200;
+}
+.overlay.open { display: block; }
+.panel {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: 480px; background: var(--white);
+  overflow-y: auto; padding: 24px;
+  box-shadow: -4px 0 24px rgba(0,0,0,0.12);
+  animation: slideIn 0.2s ease;
+  z-index: 201;
+}
+@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+.panel-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+.panel-title { font-size: 16px; font-weight: 600; line-height: 1.3; }
+.panel-sub { font-size: 12px; color: var(--gray-400); margin-top: 3px; font-family: var(--mono); }
+.btn-close {
+  background: var(--gray-100); border: none; border-radius: 6px;
+  width: 28px; height: 28px; cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--gray-600); flex-shrink: 0; margin-left: 12px;
+}
+.btn-close:hover { background: var(--gray-200); }
+.section { margin-bottom: 22px; }
+.section-title {
+  font-size: 11px; font-weight: 500; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--gray-400); margin-bottom: 10px;
+  padding-bottom: 6px; border-bottom: 1px solid var(--gray-100);
+}
+.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.field { background: var(--gray-50); border-radius: var(--radius); padding: 10px 12px; }
+.field.full { grid-column: 1/-1; }
+.field-label { font-size: 11px; color: var(--gray-400); margin-bottom: 3px; }
+.field-value { font-size: 13px; font-weight: 500; word-break: break-word; line-height: 1.4; }
+.field-value.mono { font-family: var(--mono); font-size: 12px; }
+
+.status-btns { display: flex; gap: 8px; }
+.btn-st {
+  flex: 1; font-family: var(--font); font-size: 12px; font-weight: 500;
+  padding: 8px 10px; border-radius: var(--radius); cursor: pointer;
+  border: 1px solid var(--gray-200); background: var(--white); color: var(--gray-600);
+  transition: all 0.15s; text-align: center;
+}
+.btn-st:hover { border-color: var(--gray-400); }
+.btn-st.s-aperto { background: var(--amber-light); border-color: var(--amber); color: #854F0B; }
+.btn-st.s-lav { background: var(--blue-light); border-color: var(--blue); color: #185FA5; }
+.btn-st.s-chiuso { background: var(--green-light); border-color: var(--green); color: var(--green-dark); }
+
+.note-area {
+  width: 100%; min-height: 90px; resize: vertical;
+  font-family: var(--font); font-size: 13px; line-height: 1.5;
+  padding: 10px 12px; border: 1px solid var(--gray-200); border-radius: var(--radius);
+  color: var(--gray-800); background: var(--white); outline: none;
+  transition: border-color 0.15s;
+}
+.note-area:focus { border-color: var(--green); }
+.btn-save {
+  margin-top: 8px; font-family: var(--font); font-size: 12px; font-weight: 500;
+  padding: 7px 16px; border-radius: var(--radius); cursor: pointer;
+  border: none; background: var(--green); color: white; transition: background 0.15s;
+}
+.btn-save:hover { background: var(--green-dark); }
+.btn-save:disabled { background: var(--gray-200); cursor: not-allowed; }
+
+/* MODAL */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45); z-index: 300;
+  align-items: center; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--white); border-radius: var(--radius-lg);
+  padding: 24px; width: 540px; max-width: 95vw; max-height: 90vh; overflow-y: auto;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+  animation: fadeUp 0.2s ease;
+}
+@keyframes fadeUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-title { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.form-field { display: flex; flex-direction: column; gap: 5px; }
+.form-field.full { grid-column: 1/-1; }
+.form-label { font-size: 11px; font-weight: 500; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.05em; }
+.form-input {
+  font-family: var(--font); font-size: 13px; padding: 8px 12px;
+  border: 1px solid var(--gray-200); border-radius: var(--radius);
+  background: var(--white); color: var(--gray-800); outline: none;
+  transition: border-color 0.15s;
+}
+.form-input:focus { border-color: var(--green); }
+.modal-footer {
+  display: flex; justify-content: flex-end; gap: 8px;
+  border-top: 1px solid var(--gray-100); padding-top: 16px; margin-top: 4px;
+}
+.btn-cancel {
+  font-family: var(--font); font-size: 13px; font-weight: 500;
+  padding: 8px 16px; border-radius: var(--radius); cursor: pointer;
+  border: 1px solid var(--gray-200); background: var(--white); color: var(--gray-600);
+}
+.btn-confirm {
+  font-family: var(--font); font-size: 13px; font-weight: 500;
+  padding: 8px 18px; border-radius: var(--radius); cursor: pointer;
+  border: none; background: var(--green); color: white; transition: background 0.15s;
+}
+.btn-confirm:hover { background: var(--green-dark); }
+.btn-confirm:disabled { background: var(--gray-200); cursor: not-allowed; }
+
+/* MISC */
+.empty-state { text-align: center; padding: 60px 24px; color: var(--gray-400); }
+.empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; }
+.empty-state p { font-size: 14px; }
+.toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 500;
+  background: var(--gray-800); color: white;
+  padding: 12px 20px; border-radius: var(--radius);
+  font-size: 13px; font-weight: 500;
+  transform: translateY(80px); opacity: 0;
+  transition: all 0.25s ease; pointer-events: none;
+  max-width: 320px;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.ok { background: var(--green-dark); }
+.toast.err { background: var(--red); }
+.spinner {
+  display: inline-block; width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.3); border-top-color: white;
+  border-radius: 50%; animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-mark">A</div>
+    <div class="logo-text">Ameba <span>Ticket</span></div>
+  </div>
+  <div class="topbar-right">
+    <div class="sync-pill" onclick="loadTickets()" title="Clicca per aggiornare">
+      <div class="sync-dot" id="syncDot"></div>
+      <span id="syncLabel">Caricamento...</span>
+    </div>
+    <button class="btn-nuovo" onclick="openNuovo()">+ Nuovo ticket</button>
+  </div>
+</div>
+
+<div class="metrics-bar">
+  <div class="metric"><div class="metric-label">Totale</div><div class="metric-value" id="mTot">—</div></div>
+  <div class="metric"><div class="metric-label">Aperti</div><div class="metric-value amber" id="mAp">—</div></div>
+  <div class="metric"><div class="metric-label">In lavorazione</div><div class="metric-value blue" id="mLav">—</div></div>
+  <div class="metric"><div class="metric-label">SLA scaduti</div><div class="metric-value red" id="mSca">—</div></div>
+  <div class="metric"><div class="metric-label">Chiusi oggi</div><div class="metric-value green" id="mChi">—</div></div>
+</div>
+
+<div class="toolbar">
+  <div class="search-wrap">
+    <span class="search-icon">&#128269;</span>
+    <input type="text" id="search" placeholder="Cerca N° chiamata, ubicazione, guasto, cliente..." oninput="renderTable()">
+  </div>
+  <div class="tab-group">
+    <button class="tab active" onclick="setTab('tutti',this)">Tutti</button>
+    <button class="tab" onclick="setTab('Aperto',this)">Aperti</button>
+    <button class="tab" onclick="setTab('In lavorazione',this)">In lavorazione</button>
+    <button class="tab" onclick="setTab('Chiuso',this)">Chiusi</button>
+  </div>
+  <select id="fApp" onchange="renderTable()">
+    <option value="">Tutte le appaltatrici</option>
+    <option>GTN</option>
+    <option>Mercurio Sistemi</option>
+    <option>Distribution Service</option>
+    <option>Sipos</option>
+  </select>
+  <select id="fSla" onchange="renderTable()">
+    <option value="">Tutti gli SLA</option>
+    <option>2h</option><option>4h</option><option>8h</option><option>NBD</option>
+  </select>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr>
+      <th style="width:105px">N° chiamata</th>
+      <th style="width:75px">Data</th>
+      <th style="width:155px">Ubicazione</th>
+      <th style="width:155px">Indirizzo</th>
+      <th style="width:130px">Guasto</th>
+      <th style="width:115px">Appaltatrice</th>
+      <th style="width:50px">SLA</th>
+      <th style="width:95px">Stato</th>
+      <th style="width:105px">Tempo SLA</th>
+    </tr></thead>
+    <tbody id="tbody">
+      <tr><td colspan="9" class="empty-state"><div class="empty-icon">⏳</div><p>Caricamento ticket...</p></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- DETAIL PANEL -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closePanel()"></div>
+<div class="panel" id="panel" style="display:none">
+  <div class="panel-header">
+    <div>
+      <div class="panel-title" id="pTitle">—</div>
+      <div class="panel-sub" id="pSub">—</div>
+    </div>
+    <button class="btn-close" onclick="closePanel()">✕</button>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Stato intervento</div>
+    <div class="status-btns">
+      <button class="btn-st" id="bAp" onclick="cambiaStato('Aperto')">Aperto</button>
+      <button class="btn-st" id="bLav" onclick="cambiaStato('In lavorazione')">In lavorazione</button>
+      <button class="btn-st" id="bChi" onclick="cambiaStato('Chiuso')">Chiuso</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Dettagli ticket</div>
+    <div class="field-grid" id="pFields"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Note operative</div>
+    <textarea class="note-area" id="noteArea" placeholder="Aggiungi note, aggiornamenti o istruzioni per l'intervento..."></textarea>
+    <button class="btn-save" id="btnSaveNote" onclick="salvaNota()">Salva nota</button>
+  </div>
+</div>
+
+<!-- MODAL NUOVO TICKET -->
+<div class="modal-overlay" id="modalOv" onclick="if(event.target===this)closeNuovo()">
+  <div class="modal">
+    <div class="modal-title">Nuovo ticket manuale</div>
+    <div class="form-grid">
+      <div class="form-field"><label class="form-label">N° chiamata *</label><input class="form-input" id="nNum" placeholder="es. TK-001-SIPOS"></div>
+      <div class="form-field"><label class="form-label">Appaltatrice</label>
+        <select class="form-input" id="nApp">
+          <option>Sipos</option><option>GTN</option><option>Mercurio Sistemi</option><option>Distribution Service</option>
+        </select>
+      </div>
+      <div class="form-field"><label class="form-label">Data *</label><input class="form-input" id="nData" type="date"></div>
+      <div class="form-field"><label class="form-label">Ora</label><input class="form-input" id="nOra" type="time"></div>
+      <div class="form-field"><label class="form-label">SLA</label>
+        <select class="form-input" id="nSla"><option>4h</option><option>8h</option><option>2h</option><option>NBD</option></select>
+      </div>
+      <div class="form-field"><label class="form-label">Inserita da</label><input class="form-input" id="nIns" placeholder="Nome operatore"></div>
+      <div class="form-field full"><label class="form-label">Cliente</label><input class="form-input" id="nCli" placeholder="es. MD S.p.A."></div>
+      <div class="form-field full"><label class="form-label">Ubicazione *</label><input class="form-input" id="nUbi" placeholder="es. MD - GARLASCO 300953"></div>
+      <div class="form-field full"><label class="form-label">Indirizzo</label><input class="form-input" id="nInd" placeholder="es. Via Roma 1, Garlasco (PV)"></div>
+      <div class="form-field full"><label class="form-label">Guasto *</label><input class="form-input" id="nGua" placeholder="es. Cassa bloccata"></div>
+      <div class="form-field full"><label class="form-label">Note</label><input class="form-input" id="nNote" placeholder="Note aggiuntive"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeNuovo()">Annulla</button>
+      <button class="btn-confirm" id="btnConf" onclick="salvaTicket()">Salva ticket</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── CONFIGURAZIONE ───────────────────────────────────────────────
+const SHEET_ID   = '1G0Ro9pfFC1HJZDS0Gagz56wC07x8kHTZdrAqfqv_kWM';
+const SHEET_NAME = 'Ticket';
+const WEBHOOK    = 'https://hook.eu1.make.com/274dvhyhrb1fl438penmwn7grcdw3r12';
+const API_BASE   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
+// ─────────────────────────────────────────────────────────────────
+
+let allTickets = [];
+let currentTab = 'tutti';
+let activeRow  = null;
+
+const SLA_MS = { '2h':7200000, '4h':14400000, '8h':28800000, 'NBD':86400000 };
+
+// ── DATA HELPERS ──────────────────────────────────────────────────
+function parseItalianDate(d, t) {
+  if (!d) return null;
+  try {
+    const ds = String(d).trim();
+    const ts = String(t||'08:00').trim().substring(0,5);
+    if (ds.includes('/')) {
+      const [dd,mm,yyyy] = ds.split('/');
+      return new Date(`${yyyy}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}T${ts}:00`);
+    }
+    return new Date(ds + 'T' + ts + ':00');
+  } catch(e) { return null; }
+}
+
+function slaInfo(t) {
+  if (t.Stato === 'Chiuso') return { pct:100, label:'Chiuso', color:'#1D9E75', expired:false };
+  const dt = parseItalianDate(t.Data, t.Ora);
+  if (!dt || isNaN(dt)) return { pct:0, label:'—', color:'#9B9990', expired:false };
+  const ms  = SLA_MS[t.SLA] || SLA_MS['8h'];
+  const el  = Date.now() - dt.getTime();
+  const pct = Math.min(100, Math.round(el / ms * 100));
+  const rem = Math.max(0, ms - el);
+  const h   = Math.floor(rem / 3600000);
+  const m   = Math.floor((rem % 3600000) / 60000);
+  const exp = el > ms;
+  const lbl = exp ? 'Scaduto' : (h > 0 ? `${h}h ${m}m` : `${m}m`);
+  const col = pct >= 100 ? '#E24B4A' : pct >= 70 ? '#EF9F27' : '#1D9E75';
+  return { pct, label:lbl, color:col, expired:exp };
+}
+
+function statoBadge(stato, exp) {
+  if (exp && stato !== 'Chiuso') return '<span class="badge b-scaduto">SLA scaduto</span>';
+  if (stato === 'Chiuso')        return '<span class="badge b-chiuso">Chiuso</span>';
+  if (stato === 'In lavorazione')return '<span class="badge b-lav">In lavorazione</span>';
+  return '<span class="badge b-aperto">Aperto</span>';
+}
+
+// ── LOAD DATA via CSV proxy ───────────────────────────────────────
+async function loadTickets() {
+  setSyncLoading();
+  try {
+    const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(API_BASE + '&t=' + Date.now());
+    const res  = await fetch(proxyUrl);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const csv  = await res.text();
+    const rows = csvParse(csv);
+    if (rows.length < 2) { allTickets = []; renderTable(); setSyncOk(); return; }
+    const headers = rows[0];
+    allTickets = rows.slice(1)
+      .filter(r => r[0] && r[0].trim())
+      .map((r, i) => {
+        const obj = { _row: i + 2 };
+        headers.forEach((h, j) => { obj[h.trim()] = (r[j] || '').trim(); });
+        return obj;
+      });
+    renderTable();
+    setSyncOk();
+  } catch(e) {
+    setSyncError();
+    showToast('Errore caricamento dati: ' + e.message, 'err');
+  }
+}
+
+function csvParse(text) {
+  const rows = [];
+  let row = [], field = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"' && text[i+1] === '"') { field += '"'; i++; }
+      else if (c === '"') inQ = false;
+      else field += c;
+    } else {
+      if (c === '"') inQ = true;
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+      else if (c === '\r') {}
+      else field += c;
+    }
+  }
+  if (field || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+// ── RENDER TABLE ──────────────────────────────────────────────────
+function filtered() {
+  const q  = document.getElementById('search').value.toLowerCase();
+  const fa = document.getElementById('fApp').value;
+  const fs = document.getElementById('fSla').value;
+  return allTickets.filter(t => {
+    if (currentTab !== 'tutti' && t['Stato'] !== currentTab) return false;
+    if (fa && t['Appaltatrice'] !== fa) return false;
+    if (fs && t['SLA'] !== fs) return false;
+    if (q) {
+      const hay = [t['N° chiamata'],t['Ubicazione'],t['Indirizzo'],t['Guasto'],t['Cliente'],t['Appaltatrice']].join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function renderTable() {
+  const rows = filtered();
+  const tbody = document.getElementById('tbody');
+  updateMetrics();
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📭</div><p>Nessun ticket trovato</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(t => {
+    const s = slaInfo(t);
+    return `<tr onclick="openPanel(${t._row})">
+      <td><span class="ticket-id">${t['N° chiamata']||'—'}</span></td>
+      <td>${t['Data']||'—'}</td>
+      <td><span class="ubicazione-cell">${t['Ubicazione']||'—'}</span></td>
+      <td><span class="indirizzo-cell">${t['Indirizzo']||'—'}</span></td>
+      <td>${t['Guasto']||'—'}</td>
+      <td><span class="badge b-app">${t['Appaltatrice']||'—'}</span></td>
+      <td><span class="badge b-gray">${t['SLA']||'—'}</span></td>
+      <td>${statoBadge(t['Stato'], s.expired)}</td>
+      <td>
+        <div class="sla-wrap">
+          <div class="sla-track"><div class="sla-fill" style="width:${s.pct}%;background:${s.color}"></div></div>
+          <span class="sla-lbl" style="color:${s.color}">${s.label}</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function updateMetrics() {
+  const today = new Date().toLocaleDateString('it-IT');
+  document.getElementById('mTot').textContent = allTickets.length || '0';
+  document.getElementById('mAp').textContent  = allTickets.filter(t => t['Stato']==='Aperto').length;
+  document.getElementById('mLav').textContent = allTickets.filter(t => t['Stato']==='In lavorazione').length;
+  document.getElementById('mSca').textContent = allTickets.filter(t => t['Stato']!=='Chiuso' && slaInfo(t).expired).length;
+  document.getElementById('mChi').textContent = allTickets.filter(t => {
+    if (t['Stato']!=='Chiuso') return false;
+    const dt = parseItalianDate(t['Data'], t['Ora']);
+    if (!dt) return false;
+    return dt.toLocaleDateString('it-IT') === today;
+  }).length;
+}
+
+function setTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderTable();
+}
+
+// ── DETAIL PANEL ──────────────────────────────────────────────────
+function openPanel(row) {
+  const t = allTickets.find(x => x._row === row);
+  if (!t) return;
+  activeRow = row;
+  document.getElementById('pTitle').textContent = t['Ubicazione'] || t['N° chiamata'] || '—';
+  document.getElementById('pSub').textContent   = (t['N° chiamata']||'') + ' — ' + (t['Appaltatrice']||'');
+  const s = slaInfo(t);
+  const fields = [
+    ['N° chiamata', t['N° chiamata']||'—', false, 'mono'],
+    ['Data / Ora',  (t['Data']||'—') + ' ' + (t['Ora']||''), false, ''],
+    ['SLA', (t['SLA']||'—') + ' — ' + s.label, false, 'mono'],
+    ['Cliente', t['Cliente']||'—', true, ''],
+    ['Indirizzo', t['Indirizzo']||'—', true, ''],
+    ['Guasto', t['Guasto']||'—', true, ''],
+    ['Appaltatrice', t['Appaltatrice']||'—', false, ''],
+    ['Inserita da', t['Inserita da']||'—', false, ''],
+    ['Prodotto', t['Prodotto']||'—', false, ''],
+    ['Matricola', t['Matricola']||'—', false, 'mono'],
+  ];
+  document.getElementById('pFields').innerHTML = fields.map(([lbl,val,full,cls]) =>
+    `<div class="field${full?' full':''}">
+      <div class="field-label">${lbl}</div>
+      <div class="field-value ${cls}">${val}</div>
+    </div>`
+  ).join('');
+  document.getElementById('noteArea').value = t['Note'] || '';
+  aggiornaStato(t['Stato']);
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('panel').style.display = 'block';
+}
+
+function closePanel() {
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('panel').style.display = 'none';
+  activeRow = null;
+}
+
+function aggiornaStato(stato) {
+  document.getElementById('bAp').className  = 'btn-st' + (stato==='Aperto'          ? ' s-aperto' : '');
+  document.getElementById('bLav').className = 'btn-st' + (stato==='In lavorazione'  ? ' s-lav'    : '');
+  document.getElementById('bChi').className = 'btn-st' + (stato==='Chiuso'          ? ' s-chiuso' : '');
+}
+
+// ── WEBHOOK WRITE ─────────────────────────────────────────────────
+async function sendToWebhook(payload) {
+  const res = await fetch(WEBHOOK, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error('Webhook error ' + res.status);
+  return res;
+}
+
+async function cambiaStato(stato) {
+  if (!activeRow) return;
+  const t = allTickets.find(x => x._row === activeRow);
+  if (!t) return;
+  try {
+    setSyncLoading();
+    await sendToWebhook({ row: activeRow, stato, note: t['Note']||'' });
+    t['Stato'] = stato;
+    aggiornaStato(stato);
+    renderTable();
+    setSyncOk();
+    showToast('Stato aggiornato: ' + stato, 'ok');
+  } catch(e) {
+    setSyncError();
+    showToast('Errore aggiornamento stato', 'err');
+  }
+}
+
+async function salvaNota() {
+  if (!activeRow) return;
+  const t    = allTickets.find(x => x._row === activeRow);
+  const nota = document.getElementById('noteArea').value;
+  const btn  = document.getElementById('btnSaveNote');
+  try {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>';
+    setSyncLoading();
+    await sendToWebhook({ row: activeRow, stato: t['Stato']||'Aperto', note: nota });
+    t['Note'] = nota;
+    setSyncOk();
+    showToast('Nota salvata', 'ok');
+  } catch(e) {
+    setSyncError();
+    showToast('Errore salvataggio nota', 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Salva nota';
+  }
+}
+
+// ── NUOVO TICKET ──────────────────────────────────────────────────
+function openNuovo() {
+  const oggi = new Date();
+  document.getElementById('nData').value = oggi.toISOString().split('T')[0];
+  document.getElementById('nOra').value  = oggi.toTimeString().slice(0,5);
+  ['nNum','nCli','nUbi','nInd','nGua','nIns','nNote'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('modalOv').classList.add('open');
+}
+function closeNuovo() { document.getElementById('modalOv').classList.remove('open'); }
+
+async function salvaTicket() {
+  const g = id => document.getElementById(id).value.trim();
+  if (!g('nNum') || !g('nUbi') || !g('nGua')) {
+    showToast('Compila: N° chiamata, Ubicazione e Guasto', 'err');
+    return;
+  }
+  const [yyyy,mm,dd] = g('nData').split('-');
+  const dataIt = `${dd}/${mm}/${yyyy}`;
+  const payload = {
+    action: 'add',
+    'N° chiamata': g('nNum'),
+    'Data': dataIt,
+    'Ora': g('nOra'),
+    'Inserita da': g('nIns'),
+    'Cliente': g('nCli'),
+    'Sede': '',
+    'Ubicazione': g('nUbi'),
+    'Indirizzo': g('nInd'),
+    'Prodotto': '',
+    'Matricola': '',
+    'Guasto': g('nGua'),
+    'SLA': g('nSla'),
+    'Appaltatrice': g('nApp'),
+    'Stato': 'Aperto',
+    'Note': g('nNote')
+  };
+  const btn = document.getElementById('btnConf');
+  try {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Salvataggio...';
+    setSyncLoading();
+    await sendToWebhook(payload);
+    closeNuovo();
+    await loadTickets();
+    showToast('Ticket creato correttamente', 'ok');
+  } catch(e) {
+    setSyncError();
+    showToast('Errore creazione ticket', 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Salva ticket';
+  }
+}
+
+// ── UI HELPERS ────────────────────────────────────────────────────
+function setSyncLoading() {
+  document.getElementById('syncDot').className   = 'sync-dot loading';
+  document.getElementById('syncLabel').textContent = 'Aggiornamento...';
+}
+function setSyncOk() {
+  document.getElementById('syncDot').className   = 'sync-dot';
+  const now = new Date().toLocaleTimeString('it-IT', {hour:'2-digit',minute:'2-digit'});
+  document.getElementById('syncLabel').textContent = 'Aggiornato ' + now;
+}
+function setSyncError() {
+  document.getElementById('syncDot').className   = 'sync-dot error';
+  document.getElementById('syncLabel').textContent = 'Errore connessione';
+}
+
+let toastTimer;
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = 'toast', 3500);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+loadTickets();
+setInterval(loadTickets, 120000); // auto-refresh ogni 2 minuti
+</script>
+</body>
+</html>
