@@ -543,27 +543,41 @@ function statoBadge(stato, exp) {
 // ── LOAD DATA via CSV proxy ───────────────────────────────────────
 async function loadTickets() {
   setSyncLoading();
-  try {
-    const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(API_BASE + '&t=' + Date.now());
-    const res  = await fetch(proxyUrl);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const csv  = await res.text();
-    const rows = csvParse(csv);
-    if (rows.length < 2) { allTickets = []; renderTable(); setSyncOk(); return; }
-    const headers = rows[0].map(h => h.trim().replace(/[\r\n]/g, ''));
-    allTickets = rows.slice(1)
-      .filter(r => r[0] && r[0].trim())
-      .map((r, i) => {
-        const obj = { _row: i + 2 };
-        headers.forEach((h, j) => { obj[h.trim()] = (r[j] || '').trim(); });
-        return obj;
-      });
-    renderTable();
-    setSyncOk();
-  } catch(e) {
-    setSyncError();
-    showToast('Errore caricamento dati: ' + e.message, 'err');
+  const proxies = [
+    'https://corsproxy.io/?',
+    'https://api.allorigins.win/raw?url=',
+  ];
+  let lastError = '';
+  for (const proxy of proxies) {
+    try {
+      const url = proxy + encodeURIComponent(API_BASE + '&t=' + Date.now());
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const csv = await res.text();
+      if (!csv || csv.trim().length < 10) throw new Error('Risposta vuota');
+      const rows = csvParse(csv);
+      if (rows.length < 2) { allTickets = []; renderTable(); setSyncOk(); return; }
+      const headers = rows[0].map(h => (h||'').trim().replace(/[\r\n]/g, ''));
+      allTickets = rows.slice(1)
+        .filter(r => r && r[0] && r[0].trim())
+        .map((r, i) => {
+          const obj = { _row: i + 2 };
+          headers.forEach((h, j) => {
+            const raw = r[j] != null ? String(r[j]) : '';
+            obj[h] = raw.replace(/\n/g, ' ').replace(/\r/g, '').replace(/\\n/g, ' ').trim();
+          });
+          return obj;
+        })
+        .filter(t => t['N° chiamata'] && t['N° chiamata'].length > 0);
+      renderTable();
+      setSyncOk();
+      return; // successo, esci dal loop
+    } catch(e) {
+      lastError = e.message;
+    }
   }
+  setSyncError();
+  showToast('Errore caricamento: ' + lastError, 'err');
 }
 
 function csvParse(text) {
