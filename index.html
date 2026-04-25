@@ -310,7 +310,7 @@ tbody tr:hover td { background: var(--gray-50); cursor: pointer; }
   <div class="metric"><div class="metric-label">Totale</div><div class="metric-value" id="mTot">—</div></div>
   <div class="metric"><div class="metric-label">Aperti</div><div class="metric-value amber" id="mAp">—</div></div>
   <div class="metric"><div class="metric-label">In lavorazione</div><div class="metric-value blue" id="mLav">—</div></div>
-  <div class="metric"><div class="metric-label">SLA scaduti</div><div class="metric-value red" id="mSca">—</div></div>
+  <div class="metric"><div class="metric-label">SLA scaduti</div><div class="metric-value red" id="mSca">N/D</div></div>
   <div class="metric"><div class="metric-label">Chiusi oggi</div><div class="metric-value green" id="mChi">—</div></div>
 </div>
 
@@ -332,10 +332,7 @@ tbody tr:hover td { background: var(--gray-50); cursor: pointer; }
     <option>Distribution Service</option>
     <option>Sipos</option>
   </select>
-  <select id="fSla" onchange="renderTable()">
-    <option value="">Tutti gli SLA</option>
-    <option>2h</option><option>4h</option><option>8h</option><option>NBD</option>
-  </select>
+
 </div>
 
 <div class="table-wrap">
@@ -343,16 +340,14 @@ tbody tr:hover td { background: var(--gray-50); cursor: pointer; }
     <thead><tr>
       <th style="width:105px">N° chiamata</th>
       <th style="width:75px">Data</th>
-      <th style="width:155px">Ubicazione</th>
-      <th style="width:155px">Indirizzo</th>
-      <th style="width:130px">Guasto</th>
-      <th style="width:115px">Appaltatrice</th>
-      <th style="width:50px">SLA</th>
-      <th style="width:95px">Stato</th>
-      <th style="width:105px">Tempo SLA</th>
+      <th style="width:200px">Ubicazione</th>
+      <th style="width:180px">Indirizzo</th>
+      <th style="width:160px">Guasto</th>
+      <th style="width:130px">Appaltatrice</th>
+      <th style="width:110px">Stato</th>
     </tr></thead>
     <tbody id="tbody">
-      <tr><td colspan="9" class="empty-state"><div class="empty-icon">⏳</div><p>Caricamento ticket...</p></td></tr>
+      <tr><td colspan="7" class="empty-state"><div class="empty-icon">⏳</div><p>Caricamento ticket...</p></td></tr>
     </tbody>
   </table>
 </div>
@@ -482,7 +477,7 @@ async function loadTickets() {
     const csv  = await res.text();
     const rows = csvParse(csv);
     if (rows.length < 2) { allTickets = []; renderTable(); setSyncOk(); return; }
-    const headers = rows[0];
+    const headers = rows[0].map(h => h.trim().replace(/[\r\n]/g, ''));
     allTickets = rows.slice(1)
       .filter(r => r[0] && r[0].trim())
       .map((r, i) => {
@@ -541,26 +536,19 @@ function renderTable() {
   const tbody = document.getElementById('tbody');
   updateMetrics();
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📭</div><p>Nessun ticket trovato</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📭</div><p>Nessun ticket trovato</p></div></td></tr>`;
     return;
   }
   tbody.innerHTML = rows.map(t => {
-    const s = slaInfo(t);
+    const clean = v => (v||'').replace(/\\n/g,'').replace(/\n/g,'').trim() || '—';
     return `<tr onclick="openPanel(${t._row})">
-      <td><span class="ticket-id">${t['N° chiamata']||'—'}</span></td>
-      <td>${t['Data']||'—'}</td>
-      <td><span class="ubicazione-cell">${t['Ubicazione']||'—'}</span></td>
-      <td><span class="indirizzo-cell">${t['Indirizzo']||'—'}</span></td>
-      <td>${t['Guasto']||'—'}</td>
-      <td><span class="badge b-app">${t['Appaltatrice']||'—'}</span></td>
-      <td><span class="badge b-gray">${t['SLA']||'—'}</span></td>
-      <td>${statoBadge(t['Stato'], s.expired)}</td>
-      <td>
-        <div class="sla-wrap">
-          <div class="sla-track"><div class="sla-fill" style="width:${s.pct}%;background:${s.color}"></div></div>
-          <span class="sla-lbl" style="color:${s.color}">${s.label}</span>
-        </div>
-      </td>
+      <td><span class="ticket-id">${clean(t['N° chiamata'])}</span></td>
+      <td>${clean(t['Data'])}</td>
+      <td><span class="ubicazione-cell">${clean(t['Ubicazione'])}</span></td>
+      <td><span class="indirizzo-cell">${clean(t['Indirizzo'])}</span></td>
+      <td>${clean(t['Guasto'])}</td>
+      <td><span class="badge b-app">${clean(t['Appaltatrice'])}</span></td>
+      <td>${statoBadge(t['Stato'], false)}</td>
     </tr>`;
   }).join('');
 }
