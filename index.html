@@ -494,7 +494,7 @@ tbody tr:hover td { background: var(--bg-hover); cursor: pointer; }
 const SHEET_ID   = '1G0Ro9pfFC1HJZDS0Gagz56wC07x8kHTZdrAqfqv_kWM';
 const SHEET_NAME = 'Ticket';
 const WEBHOOK    = 'https://hook.eu1.make.com/274dvhyhrb1fl438penmwn7grcdw3r12';
-const API_BASE   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
+const API_PROXY  = 'https://script.google.com/macros/s/AKfycbwQJbHotAQ8SqNVptOeWvZjLyE2wViRJGVPQOJHiio7I_GsJJ59js5VUXq0tNeyS3UZ/exec';
 // ─────────────────────────────────────────────────────────────────
 
 let allTickets = [];
@@ -543,41 +543,27 @@ function statoBadge(stato, exp) {
 // ── LOAD DATA via CSV proxy ───────────────────────────────────────
 async function loadTickets() {
   setSyncLoading();
-  const proxies = [
-    'https://corsproxy.io/?',
-    'https://api.allorigins.win/raw?url=',
-  ];
-  let lastError = '';
-  for (const proxy of proxies) {
-    try {
-      const url = proxy + encodeURIComponent(API_BASE + '&t=' + Date.now());
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const csv = await res.text();
-      if (!csv || csv.trim().length < 10) throw new Error('Risposta vuota');
-      const rows = csvParse(csv);
-      if (rows.length < 2) { allTickets = []; renderTable(); setSyncOk(); return; }
-      const headers = rows[0].map(h => (h||'').trim().replace(/[\r\n]/g, ''));
-      allTickets = rows.slice(1)
-        .filter(r => r && r[0] && r[0].trim())
-        .map((r, i) => {
-          const obj = { _row: i + 2 };
-          headers.forEach((h, j) => {
-            const raw = r[j] != null ? String(r[j]) : '';
-            obj[h] = raw.replace(/\n/g, ' ').replace(/\r/g, '').replace(/\\n/g, ' ').trim();
-          });
-          return obj;
-        })
-        .filter(t => t['N° chiamata'] && t['N° chiamata'].length > 0);
-      renderTable();
-      setSyncOk();
-      return; // successo, esci dal loop
-    } catch(e) {
-      lastError = e.message;
-    }
+  try {
+    const res = await fetch(API_PROXY + '?t=' + Date.now());
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (!Array.isArray(data)) throw new Error('Formato dati non valido');
+    allTickets = data
+      .filter(t => t['N° chiamata'] && t['N° chiamata'].length > 0)
+      .map(t => {
+        // Pulisce \n residui da tutti i campi
+        const clean = {};
+        Object.keys(t).forEach(k => {
+          clean[k] = String(t[k] || '').replace(/\n/g, ' ').replace(/\r/g, '').replace(/\\n/g, ' ').trim();
+        });
+        return clean;
+      });
+    renderTable();
+    setSyncOk();
+  } catch(e) {
+    setSyncError();
+    showToast('Errore caricamento: ' + e.message, 'err');
   }
-  setSyncError();
-  showToast('Errore caricamento: ' + lastError, 'err');
 }
 
 function csvParse(text) {
