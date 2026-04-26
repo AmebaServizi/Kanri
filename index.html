@@ -634,7 +634,7 @@ function renderTable() {
   tbody.innerHTML = rows.map(t => {
     const clean = v => (v||'').replace(/\\n/g,'').replace(/\n/g,'').trim() || '—';
     return `<tr onclick="openPanel(${t._row})">
-      <td><span class="ticket-id">${clean(t['N° chiamata'])}</span></td>
+      <td><span class="ticket-id">${clean(t['Chiamata'])}</span></td>
       <td>${clean(t['Data'])}</td>
       <td><span class="ubicazione-cell">${clean(t['Ubicazione'])}</span></td>
       <td><span class="indirizzo-cell">${clean(t['Indirizzo'])}</span></td>
