@@ -639,7 +639,7 @@ function renderTable() {
       <td><span class="ubicazione-cell">${clean(t['Ubicazione'])}</span></td>
       <td><span class="indirizzo-cell">${clean(t['Indirizzo'])}</span></td>
       <td>${clean(t['Guasto'])}</td>
-      <td><span class="badge b-app">${clean(t['Appaltatore'])}</span></td>
+      t<td><span class="badge b-app">${clean(detectAppaltatrice(t))}</span></td>
       <td>${statoBadge(t['Stato'], false)}</td>
     </tr>`;
   }).join('');
